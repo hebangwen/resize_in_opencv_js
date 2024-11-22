@@ -130,7 +130,8 @@
         function onOpenCvReady() { // eslint-disable-line no-unused-vars
             document.getElementById('status').innerHTML =
                 "This sample is used to compare 3 algorithms: <strong>inter area</strong>, <strong>linear</strong> and <strong>linear + gauss blur</strong>. " +
-                "Image is read from device first, and resize down by a factor and resize up for visualization";
+                "Image is read from device first, and resize down by a factor and resize up for visualization." +
+                "<br> Please note: There are 3 resizes in total to show an image. 1. resize down by opencv; 2. resize up by opencv; 3. adaptive resize to fit in viewport by browser.";
         }
 
         function onOpenCvError() { // eslint-disable-line no-unused-vars
