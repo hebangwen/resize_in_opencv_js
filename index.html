@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>resize in OpenCV</title>
+    <link href="js_example_style.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+    <h2>resize in OpenCV</h2>
+    <p id="status">OpenCV.js is loading...</p>
+    <div>
+        <table cellpadding="0" cellspacing="0" width="0" border="0">
+            <tr>
+                <td>
+                    <img id="imageSrc" alt="No Image" class="small" />
+                </td>
+                <td>
+                    <canvas id="canvasArea" class="small" height="300px"></canvas>
+                </td>
+                <td>
+                    <canvas id="canvasLinear" class="small" height="300px"></canvas>
+                </td>
+                <td>
+                    <canvas id="canvasLinearGauss" class="small" height="300px"></canvas>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <div class="caption">imageSrc <input type="file" id="fileInput" name="file" accept="image/*" />
+                    </div>
+                </td>
+                <td>
+                    <div class="caption">inter_area</div>
+                </td>
+                <td>
+                    <div class="caption">linear</div>
+                </td>
+                <td>
+                    <div class="caption">linear + gauss blur</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- 增加一个输入框，用户可以自定义缩放大小 -->
+
+    <div class="control">
+        <p>
+            Downscale factor: <input type="text" id="input_scale" value="0.25" style="width: 50px;"> 
+            <button id="regen_btn">regenerate</button>
+        </p>
+    </div>
+
+
+    <script src="utils.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        let imgElement = document.getElementById('imageSrc');
+        let inputElement = document.getElementById('fileInput');
+        inputElement.addEventListener('change', (e) => {
+            imgElement.src = URL.createObjectURL(e.target.files[0]);
+        }, false);
+
+        function resize_image_and_draw(mat, canvas_id, factor, resize_type) {
+            let mat2 = new cv.Mat();
+            let width = Math.round(mat.cols / factor);
+            let height = Math.round(mat.rows / factor);
+            cv.resize(mat, mat2, new cv.Size(width, height), 0, 0, resize_type);
+
+            let mat3 = new cv.Mat();
+            cv.resize(mat2, mat3, new cv.Size(mat.cols, mat.rows), 0, 0, cv.INTER_LINEAR);
+            cv.imshow(canvas_id, mat3);
+
+            mat2.delete();
+            mat3.delete();
+        }
+
+        function bilinear_and_gauss_blur(mat, canvas_id, factor, resize_type, sigma) {
+            let mat2 = new cv.Mat();
+            let width = Math.round(mat.cols / factor);
+            let height = Math.round(mat.rows / factor);
+            cv.resize(mat, mat2, new cv.Size(width, height), 0, 0, resize_type);
+
+            let mat3 = new cv.Mat();
+            cv.GaussianBlur(mat2, mat3, new cv.Size(sigma, sigma), 0, 0, cv.BORDER_DEFAULT);
+
+            let mat4 = new cv.Mat();
+            cv.resize(mat3, mat4, new cv.Size(mat.cols, mat.rows), 0, 0, cv.INTER_LINEAR);
+            cv.imshow(canvas_id, mat4);
+
+            mat4.delete();
+            mat3.delete();
+            mat2.delete();
+        }
+
+        let current_mat = null;
+
+        imgElement.onload = function () {
+            let mat = cv.imread(imgElement);
+            // 读取 input_scale input 框内部的值
+            let factor = 1.0 / parseFloat(document.getElementById('input_scale').value);
+
+            resize_image_and_draw(mat, 'canvasArea', factor, cv.INTER_AREA);
+            resize_image_and_draw(mat, 'canvasLinear', factor, cv.INTER_LINEAR);
+            bilinear_and_gauss_blur(mat, 'canvasLinearGauss', factor, cv.INTER_LINEAR, 5);
+
+            if (current_mat != null) {
+                current_mat.delete();
+            }
+            current_mat = mat;
+        };
+
+        let regenerate_btn = document.getElementById('regen_btn');
+        regenerate_btn.onclick = function () {
+            if (current_mat == null) {
+                return;
+            }
+
+            let mat = current_mat;
+            let factor = 1.0 / parseFloat(document.getElementById('input_scale').value);
+
+            resize_image_and_draw(mat, 'canvasArea', factor, cv.INTER_AREA);
+            resize_image_and_draw(mat, 'canvasLinear', factor, cv.INTER_LINEAR);
+            bilinear_and_gauss_blur(mat, 'canvasLinearGauss', factor, cv.INTER_LINEAR, 5);
+
+            
+        };
+
+        function onOpenCvReady() { // eslint-disable-line no-unused-vars
+            document.getElementById('status').innerHTML =
+                "This sample is used to compare 3 algorithms: <strong>inter area</strong>, <strong>linear</strong> and <strong>linear + gauss blur</strong>. " +
+                "Image is read from device first, and resize down by a factor and resize up for visualization";
+        }
+
+        function onOpenCvError() { // eslint-disable-line no-unused-vars
+            let element = document.getElementById('status');
+            element.setAttribute('class', 'err');
+            element.innerHTML = 'Failed to load opencv.js';
+        }
+    </script>
+
+    <script async src="opencv.js" type="text/javascript" onload="onOpenCvReady();" onerror="onOpenCvError();"></script>
+    <p>This page is mainly from <a href="https://docs.opencv.org/4.x/js_setup_usage.html">opencv 4.x setup_usage</a>.
+        Thanks for their contribution. </p>
+</body>
+
+</html>
